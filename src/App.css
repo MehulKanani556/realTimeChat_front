@@ -36,3 +36,34 @@
     transform: rotate(360deg);
   }
 }
+
+input{
+  background-color: #282c34;
+  border: none;
+  padding: 5px;
+  color: white;
+  border-radius: 5px;
+  margin-top: 10px;
+  width: 200px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  &:focus {
+    background-color: #282c3496;
+    border: none;
+  }
+  &:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+  }
+  &:invalid {
+    border: 2px solid red;
+  }
+  
+  &:focus:valid {
+    border: 2px solid #61dafb;
+  }
+  
+}
+input:focus{
+  border: 0 !important;
+}

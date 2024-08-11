@@ -1,0 +1,72 @@
+
+import React, { useEffect, useMemo, useState } from 'react'
+import { io } from 'socket.io-client'
+
+export default function Chat() {
+  const [con, setCon] = useState('');
+  const [id, setId] = useState('');
+  const [msg, setMsg] = useState('');
+
+  const [disMes, setDisMsg] = useState([])
+
+
+  const socket = useMemo(() => io("http://localhost:4000"), [])
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      console.log('Connected to server', socket.id);
+    })
+    socket.on("test", (msg) => {
+      console.log(msg);
+      setCon(msg);
+    })
+
+
+    socket.on('msg', (data) => {
+      console.log(data);
+      setDisMsg(prevMsgs => [...prevMsgs, data]);
+
+
+    })
+  }, [])
+
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    socket.emit('message', { id, msg })
+    setMsg('')
+    setId('')
+
+  }
+  return (
+    <div>
+      chat
+      <h3>{con}</h3>
+
+
+
+      <form action="" onSubmit={handleSubmit}>
+
+
+        <input type="text" name="id" id="" placeholder='Enter Id...' onChange={(e) => setId(e.target.value)} /><br /><br />
+        <input type="text" name="message" id="" placeholder='Enter Message...' onChange={(e) => setMsg(e.target.value)} /><br /><br />
+        <input type='submit' /><br /><br />
+      </form>
+
+
+
+
+      <hr />
+{console.log("object" , disMes)}
+      {
+        disMes.map((msg, index) => (
+          <div key={index}>
+            {console.log("sdf",msg)}
+            <p>{msg.id} : {msg.msg}</p>
+          </div>
+        ))
+      }
+    </div>
+  )
+}
