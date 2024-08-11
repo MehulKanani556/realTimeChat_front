@@ -22,7 +22,6 @@ export default function Chat() {
       console.log(msg);
       setCon(msg);
     };
-    socket.emit('register', '9876543210');
     const onMsg = (data) => {
       console.log(data);
       setDisMsg(prevMsgs => [...prevMsgs, data]);
@@ -52,6 +51,7 @@ export default function Chat() {
 
   const handleRegisterNumber = async (e)=>{
     e.preventDefault();
+
     try {
       const response = await fetch('http://localhost:5000/register', {
         method: 'POST',
@@ -73,6 +73,8 @@ export default function Chat() {
       console.error('Registration failed:', error.message);
       // Display error message to the user (e.g., update UI with error message)
     }
+    await socket.emit('register',mobileNumber);
+
   }
 
 
@@ -100,11 +102,11 @@ export default function Chat() {
 
 
       <hr />
-      {console.log("object", disMes)}
+  
       {
         disMes.map((msg, index) => (
           <div key={index}>
-            {console.log("sdf", msg)}
+        
             <p>{msg.id} : {msg.msg}</p>
           </div>
         ))
