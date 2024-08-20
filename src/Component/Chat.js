@@ -83,7 +83,19 @@ if (user && user.user.mobileNumber) {
     socket.on('messageSent', onMessageSent);
     socket.on('messageError', onMessageError);
 
-    
+    // Fetch messages from the database
+    const fetchMessages = async () => {
+        try {
+            const response = await fetch(`http://localhost:5000/messages/${user.user.mobileNumber}`);
+            const messages = await response.json();
+            setDisMsg(messages);
+        } catch (error) {
+            console.error('Error fetching messages:', error);
+        }
+    };
+
+    fetchMessages();
+
   }, [socket, navigate, user]);
 
   const handleSubmit = (e) => {
@@ -102,6 +114,16 @@ if (user && user.user.mobileNumber) {
     return null; // or a loading spinner
   }
 
+  // Group messages by sender
+  const groupedMessages = disMes.reduce((acc, message) => {
+    const key = message.from === user.user.mobileNumber ? 'You' : message.from;
+    if (!acc[key]) {
+      acc[key] = [];
+    }
+    acc[key].push(message);
+    return acc;
+  }, {});
+
   return (
     <div>
       <h2>Chat</h2>
@@ -116,24 +138,19 @@ if (user && user.user.mobileNumber) {
       <hr />
       <div style={{ margin:'5px 20px' }}>
       {disMes.map((msg, index) => (
-        <div key={index}>
-      {console.log(disMes)}
-        {msg.from ? (
-            <div style={{ display: 'flex', justifyContent: 'start' }}>
-                <span className='to'>
-                {msg.from}:{msg.msg} 
-                </span>
-            </div>
-        ) : (
-            <div style={{ display: 'flex', justifyContent: 'end' }}>
-                <span className='from'>
-                  {console.log(msg)}
-                    {msg.data.msg} : You
-                </span>
-            </div>
-        )}
-    </div>
-))}
+                    <div key={index}>
+                     { console.log(user.user.mobileNumber, msg)}
+                        {msg.from === user.user.mobileNumber ? (
+                            <div style={{ display: 'flex', justifyContent: 'end' }}>
+                                <span className='from'>{msg.msg} : You</span>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', justifyContent: 'start' }}>
+                                <span className='to'>{msg.from}: {msg.msg}</span>
+                            </div>
+                        )}
+                    </div>
+                ))}
       </div>
     </div>
   )
