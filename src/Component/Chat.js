@@ -1,130 +1,140 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { io } from 'socket.io-client'
+import { useNavigate } from 'react-router-dom';
 
 export default function Chat() {
   const [con, setCon] = useState('');
   const [msg, setMsg] = useState('');
-  const [name, setName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
   const [recipientNumber, setRecipientNumber] = useState('');
-  const [isRegistered, setIsRegistered] = useState(false);
   const [disMes, setDisMsg] = useState([]);
+  const navigate = useNavigate();
 
-  const socket = useMemo(() => io("http://localhost:4000"), []);
+  const user = JSON.parse(localStorage.getItem('user'));
+ console.log('User:', user); // Log user object
+
+  const socket = useMemo(() => {
+if (user && user.user.mobileNumber) {
+        const newSocket = io("http://localhost:4000", {
+            query: { mobileNumber: user.mobileNumber }
+        });
+        newSocket.on('connect', () => {
+            console.log('Socket connected:', newSocket.id);
+            newSocket.emit('authenticate', { mobileNumber: user.user.mobileNumber }); // Authenticate the user
+        });
+
+        newSocket.on('connect_error', (err) => {
+            console.error('Socket connection error:', err.message); // Log specific error message
+            setCon('Socket connection error: ' + err.message); // Update state with error message
+        });
+
+        newSocket.on('connect_timeout', () => {
+            console.error('Socket connection timed out.'); // Log timeout error
+            setCon('Socket connection timed out.'); // Update state with timeout message
+        });
+
+        return newSocket;
+    }
+    console.warn('No user or mobile number found. Socket will not be created.');
+    return null;
+}, [user]);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!socket) {
+        console.error('Socket is null. Cannot set up event listeners.');
+        return; // Prevent further execution if socket is null
+    }
+
     const onConnect = () => {
       console.log('Connected to server', socket.id);
     };
 
-    const onRegistered = (data) => {
-      if (data.success) {
-        setIsRegistered(true);
-        setCon('Registered successfully');
+    const onMsg = (data) => {
+      if (data && data.msg && data.from) {
+          setDisMsg(prevMsgs => {
+              const updatedMsgs = [...prevMsgs, { ...data, isReceived: data.from !== user.user.mobileNumber }];
+              localStorage.setItem('messages', JSON.stringify(updatedMsgs)); // Store updated messages
+              return updatedMsgs;
+          });
+          alert("")
       } else {
-        setCon(data.message);
+          console.error("Received malformed message:", data);
       }
+  };
+    
+    const onMessageSent = (data) => {
+        console.log('Message sent:', data);
+        alert("message")
+        setDisMsg(prevMsgs => [...prevMsgs, data]);
     };
 
-    const onMsg = (data) => {
-      setDisMsg(prevMsgs => [...prevMsgs, data]);
+    const onMessageError = (error) => {
+      console.error('Message error:', error);
+      setCon('Error sending message: ' + error);
     };
+
+    socket.on('msg', onMsg); // Enable listening for incoming messages
 
     socket.on('connect', onConnect);
-    socket.on('registered', onRegistered);
-    socket.on('msg', onMsg);
+    socket.on('messageSent', onMessageSent);
+    socket.on('messageError', onMessageError);
 
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('registered', onRegistered);
-      socket.off('msg', onMsg);
-    };
-  }, [socket]);
-
-  const handleRegisterNumber = async (e) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch('http://localhost:5000/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ mobileNumber, name }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error);
-      }
-
-      const data = await response.json();
-      console.log('Registration successful:', data);
-      socket.emit('register', mobileNumber);
-      setIsRegistered(true);  // Set isRegistered to true after successful registration
-      setCon('Registered successfully');
-    } catch (error) {
-      console.error('Registration failed:', error.message);
-      setCon('Registration failed: ' + error.message);
-    }
-  }
+    
+  }, [socket, navigate, user]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    socket.emit('message', { to: recipientNumber, msg });
+    if (!socket) {
+        setCon('Socket not connected.'); // Add error handling
+        console.error('Socket is null. User may not be logged in or socket connection failed.');
+        return; // Prevent further execution if socket is null
+    }
+    socket.emit('sendMessage', { to: recipientNumber, msg });
+   
     setMsg('');
-    setDisMsg(prevMsgs => [...prevMsgs, { from: 'You', msg }]);
+  }
+
+  if (!user) {
+    return null; // or a loading spinner
   }
 
   return (
     <div>
       <h2>Chat</h2>
       <h3>{con}</h3>
-      {!isRegistered ? (
-        <form onSubmit={handleRegisterNumber}>
-          <input type="text" placeholder='Enter Name...' onChange={(e) => setName(e.target.value)} required /><br /><br />
-          <input type="text" placeholder='Enter Mobile Number...' onChange={(e) => setMobileNumber(e.target.value)} required /><br /><br />
-          <input type='submit' value="Register" /><br /><br />
-        </form>
-      ) : (
-        <form onSubmit={handleSubmit}>
-          <input type="text" placeholder='Enter Recipient Mobile Number...' value={recipientNumber} onChange={(e) => setRecipientNumber(e.target.value)} required /><br /><br />
-          <input type="text" placeholder='Enter Message...' value={msg} onChange={(e) => setMsg(e.target.value)} required /><br /><br />
-          <input type='submit' value="Send Message" /><br /><br />
-        </form>
-      )}
+      
+      <form onSubmit={handleSubmit} >
+        <input type="text" placeholder='Enter Recipient Mobile Number...' value={recipientNumber} onChange={(e) => setRecipientNumber(e.target.value)} required /><br /><br />
+        <input type="text" placeholder='Enter Message...' value={msg} onChange={(e) => setMsg(e.target.value)} required /><br /><br />
+        <input type='submit' value="Send Message" /><br /><br />
+      </form>
 
       <hr />
+      <div style={{ margin:'5px 20px' }}>
+      {disMes.map((msg, index) => (
+        <div key={index}>
       {console.log(disMes)}
-      <div style={{ margin:'0 20px' }}>
-        {disMes.map((msg, index) => (
-          <div key={index}>
-            {msg.from && (
-              <div style={{ display: 'flex', justifyContent: 'end' }}>
-                <span className='from'>
-                  {msg.msg}:{msg.from}
-                </span>
-              </div>
-            )}
-            {msg.id && (
-              <div  style={{ display: 'flex', justifyContent: 'start' }}>
+        {msg.from ? (
+            <div style={{ display: 'flex', justifyContent: 'start' }}>
                 <span className='to'>
-                  {msg.id}:{msg.msg}
+                {msg.from}:{msg.msg} 
                 </span>
-              </div>
-            )}
-          </div>
-        ))}
-
+            </div>
+        ) : (
+            <div style={{ display: 'flex', justifyContent: 'end' }}>
+                <span className='from'>
+                  {console.log(msg)}
+                    {msg.data.msg} : You
+                </span>
+            </div>
+        )}
+    </div>
+))}
       </div>
-      {/* <table>
-
-        {disMes.map((msg, index) => (
-          <tr key={index}>
-            <td style={{ textAlign:"right" }}>{msg.from || msg.id}:</td><td style={{ textAlign:'left' }}> {msg.msg}</td>
-          </tr>
-        ))} 
-      </table> */}
     </div>
   )
 }
