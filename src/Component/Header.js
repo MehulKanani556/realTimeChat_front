@@ -32,12 +32,16 @@ const Header = () => {
 
 const styles = {
   header: {
+    position: 'fixed', // Fix the header at the top
+    top: 0,           // Align it to the top
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '1rem',
     backgroundColor: '#282c34',
     color: 'white',
+    width: '98%',    // Ensure it spans the full width
+    zIndex: 1000,     // Keep it above other content
   },
   title: {
     margin: 0,

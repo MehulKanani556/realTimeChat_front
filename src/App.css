@@ -78,3 +78,67 @@ input:focus{
   -o-border-radius: 10px;
 
 }
+.userNumber{
+  background-color: #282c34;
+  border: none;
+  text-align: left;
+  padding: 10px;
+  color: white;
+  border-radius: 5px;
+  margin: 10px;
+  width: 170px;
+  /* width: 100%; */
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  &:focus {
+    background-color: #282c3496;
+    border: none;
+  }
+  cursor: pointer;
+
+}
+
+/* Add custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 12px; /* Width of the scrollbar */
+}
+
+::-webkit-scrollbar-track {
+  background: #282c34ad; /* Background of the scrollbar track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #323334; /* Color of the scrollbar thumb */
+  border-radius: 10px; /* Rounded corners for the thumb */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #91a0a7; /* Color on hover */
+}
+.chatting-with{
+  background-color: #282c34;
+  color: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 70px;
+  text-align: left;
+  display: flex;
+align-items: center;  
+}
+.chatting-with span{
+  /* margin:  20px; */
+  cursor: pointer;
+}
+.no-message{
+  color: #282c34;
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 68px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
