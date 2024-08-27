@@ -93,19 +93,19 @@ export default function Chat() {
     socket.on('messageSent', onMessageSent);
     socket.on('messageError', onMessageError);
 
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch(`http://localhost:5000/messages/${user.user.mobileNumber}`);
-        const messages = await response.json();
-        setDisMsg(messages);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    };
 
     fetchMessages();
   }, [socket]);
 
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/messages/${user.user.mobileNumber}`);
+      const messages = await response.json();
+      setDisMsg(messages);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!recipientNumber) { // Check if no recipient number is selected
@@ -119,6 +119,7 @@ export default function Chat() {
     }
     socket.emit('sendMessage', { to: recipientNumber, msg });
     setMsg('');
+    fetchMessages();
   };
 
   if (!user) {
@@ -142,6 +143,7 @@ export default function Chat() {
     }
   };
 
+  const specificSender = '6352800647'; // Replace with the desired sender's mobile number
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row', height: '100vh' }}>
@@ -181,13 +183,18 @@ export default function Chat() {
             <h3>{con}</h3>
             <div style={{ margin: '5px 0' }}>
               { // Check if a user is selected
-                disMes.map((msg, index) => (
-                  <div key={index} style={{ margin: '10px 0', display: 'flex', justifyContent: msg.from === user.user.mobileNumber ? 'flex-end' : 'flex-start' }}>
-                    <div style={{ maxWidth: '70%', padding: '10px', borderRadius: '20px', backgroundColor: msg.from === user.user.mobileNumber ? '#dcf8c6' : '#fff', border: '1px solid #ccc' }}>
-                      <span>{msg.msg}</span>
+                disMes
+                  .filter(msg => 
+                    (msg.from === recipientNumber && msg.to === user.user.mobileNumber) || 
+                    (msg.from === user.user.mobileNumber && msg.to === recipientNumber)
+                  ) // Filter messages between the selected recipient and the user
+                  .map((msg, index) => (
+                    <div key={index} style={{ margin: '10px 0', display: 'flex', justifyContent: msg.from === user.user.mobileNumber ? 'flex-end' : 'flex-start' }}>
+                      <div style={{ maxWidth: '70%', padding: '10px', borderRadius: '20px', backgroundColor: msg.from === user.user.mobileNumber ? '#dcf8c6' : '#fff', border: '1px solid #ccc' }}>
+                        <span>{msg.msg}</span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               }
             </div>
           </div>
